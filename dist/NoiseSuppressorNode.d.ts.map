@@ -1,0 +1,1 @@
+{"version":3,"file":"NoiseSuppressorNode.d.ts","sourceRoot":"","sources":["../src/NoiseSuppressorNode.ts"],"names":[],"mappings":"AAEA,sDAAsD;AACtD,qBAAa,mBAAoB,SAAQ,gBAAgB;IACrD,OAAO,CAAC,QAAQ,CAAO;gBAEX,OAAO,EAAE,gBAAgB;IAIrC,2CAA2C;IAC3C,IAAI,OAAO,IAAI,OAAO,CAErB;IAED,IAAI,OAAO,CAAC,KAAK,EAAE,OAAO,EAGzB;CACJ"}
