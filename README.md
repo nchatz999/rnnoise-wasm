@@ -1,74 +1,61 @@
-# @timephy/rnnoise-wasm
+# rnnoise-wasm
 
-This library implements the [RNNoise](https://people.xiph.org/~jm/demo/rnnoise/) noise suppression library as a WASM module for use in web frontends.
+RNNoise v0.2 noise suppression as a WASM module for AudioWorklet.
 
-This repository contains the necessary utilities to build RNNoise using a Docker build environment, compile it to WASM with Emscripten, and export a JavaScript library from the contained TypeScript source code.
+Fork of [@timephy/rnnoise-wasm](https://github.com/timephy/rnnoise-wasm).
 
-## Forked from @jitsi/rnnoise-wasm
+## Install
 
-This library was originally forked from [@jitsi/rnnoise-wasm](https://github.com/jitsi/rnnoise-wasm).
+```bash
+npm install rnnoise-wasm
+```
 
-### Changes
+## Usage
 
-- Updated [RNNoise](https://github.com/xiph/rnnoise) to 0.2
-- Implemented an `AudioWorkletNode` that can be used directly (taken from <https://github.com/jitsi/jitsi-meet/blob/master/react/features/stream-effects>)
-- Implemented polyfills, because the exported WASM accesses `atob` and `self.location.href`
-- Uses TypeScript
+```js
+import { NoiseSuppressorNode } from "rnnoise-wasm"
+import workletUrl from "rnnoise-wasm/worklet-bundle?url"
 
-### Resources
+// Setup
+const ctx = new AudioContext({ sampleRate: 48000 })
+await ctx.audioWorklet.addModule(workletUrl)
 
-- <https://jitsi.org/blog/enhanced-noise-suppression-in-jitsi-meet>
-- <https://github.com/jitsi/rnnoise-wasm>
-- <https://www.npmjs.com/package/@jitsi/rnnoise-wasm>
+// Create node
+const suppressor = new NoiseSuppressorNode(ctx)
+source.connect(suppressor).connect(ctx.destination)
 
-## How to use
+// Toggle noise suppression
+suppressor.enabled = false  // bypass
+suppressor.enabled = true   // denoise
+```
 
-```ts
-import { NoiseSuppressorWorklet_Name } from "@timephy/rnnoise-wasm"
-// This is an example how to get the script path using Vite, may be different when using other build tools
-// NOTE: `?worker&url` is important (`worker` to generate a working script, `url` to get its url to load it)
-import NoiseSuppressorWorklet from "@timephy/rnnoise-wasm/NoiseSuppressorWorklet?worker&url"
+**Webpack** (different import syntax):
+```js
+const workletUrl = new URL("rnnoise-wasm/worklet-bundle", import.meta.url)
+```
 
-async function example() {
-    // Load the NoiseSuppressorWorklet into the AudioContext
-    const ctx = new AudioContext()
-    await ctx.audioWorklet.addModule(NoiseSuppressorWorklet)
+## LiveKit
 
-    // Instantiate the Worklet as a Node
-    const noiseSuppressionNode = new AudioWorkletNode(ctx, NoiseSuppressorWorklet_Name)
+```js
+import { NoiseSuppressorProcessor } from "rnnoise-wasm"
+import workletUrl from "rnnoise-wasm/worklet-bundle?url"
 
-    // Setup the node graph
-    const stream = new MediaStream() // containing the microphone track
-    const source = ctx.createMediaStreamSource(stream)
-    source
-        .connect(noiseSuppressionNode) // pass audio through noise suppression
-        .connect(ctx.destination) // playback audio on output device
-}
+const processor = new NoiseSuppressorProcessor(workletUrl)
+await localAudioTrack.setProcessor(processor)
+
+// Toggle
+processor.enabled = false
 ```
 
 ## Build
 
-### Prerequisites
-
-- node - tested version v10.16.3
-- npm - tested version v6.9.0
-- docker - tested version 19.03.1
-
-### Building
-
-Building is straightforward, run:
+Requires Docker and Node.js.
 
 ```bash
-# To build RNNoise, compile it into WASM, and build TypeScript
+npm install
 npm run build
 ```
 
-The repository already has a pre-compiled WASM under the `src/generated` folder, running the above command will replace it with the newly compiled binaries and glue wasm .js file respectively.
+## License
 
-In order to facilitate the build with docker the following prebuilt image is used [emscripten/emsdk](https://hub.docker.com/r/emscripten/emsdk) however, it is slightly altered by installing autotools components necessary for building rnnoise.
-
-In summary the build process consists of three steps:
-
-1. `build:dockerfile` - pulls in [emscripten/emsdk](https://hub.docker.com/r/emscripten/emsdk) which is then altered and saved. Any subsequent build is going to check if the images was already installed and use that, so if one wants to make changes to the Dockerfile be sure to first delete the build image from your local docker repo.
-2. `build:emscripten` - mounts the repo to the docker image from step one and runs build.sh on it. The bash script contains all the steps necessary for building rnnoise as a wasm module.
-3. `build:typescript` - exports the TypeScript source code to JavaScript and type declaration files
+Apache-2.0

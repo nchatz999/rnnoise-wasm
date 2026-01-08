@@ -1,0 +1,6 @@
+services:
+  build:
+    build: .
+    volumes:
+      - .:/src
+    command: bash -x ./build.sh
