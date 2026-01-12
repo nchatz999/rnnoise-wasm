@@ -1,5 +1,6 @@
 import type { ProcessorOptions, TrackProcessor } from "livekit-client";
 import { Track } from "livekit-client";
+import { VadCallback } from "./NoiseSuppressorNode";
 /** LiveKit-compatible audio processor for noise suppression. */
 export declare class NoiseSuppressorProcessor implements TrackProcessor<Track.Kind, ProcessorOptions<Track.Kind>> {
     private workletUrl;
@@ -17,5 +18,7 @@ export declare class NoiseSuppressorProcessor implements TrackProcessor<Track.Ki
     /** Enable or disable noise suppression. */
     set enabled(value: boolean);
     get enabled(): boolean;
+    /** Set VAD callback. Threshold 0-1, default 0.5. */
+    setVad(callback: VadCallback, threshold?: number): void;
 }
 //# sourceMappingURL=NoiseSuppressorProcessor.d.ts.map

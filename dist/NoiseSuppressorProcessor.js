@@ -54,5 +54,9 @@ export class NoiseSuppressorProcessor {
     get enabled() {
         return this.node?.enabled ?? true;
     }
+    /** Set VAD callback. Threshold 0-1, default 0.5. */
+    setVad(callback, threshold = 0.5) {
+        this.node?.setVad(callback, threshold);
+    }
 }
 //# sourceMappingURL=NoiseSuppressorProcessor.js.map

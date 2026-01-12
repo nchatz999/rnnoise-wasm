@@ -13,6 +13,9 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
     private readonly engine: RnnoiseEngine
     private readonly buffer: CircularBuffer
     private enabled = true
+    private vadThreshold = 0
+    private speaking = false
+    private lastVadTime = 0
 
     constructor() {
         super()
@@ -21,6 +24,7 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
         this.buffer = new CircularBuffer(leastCommonMultiple(WORKLET_BLOCK_SIZE, RNNOISE_SAMPLE_LENGTH))
         this.port.onmessage = (e) => {
             if (e.data.type === "setEnabled") this.enabled = e.data.enabled
+            else if (e.data.type === "setVad") this.vadThreshold = e.data.threshold
         }
     }
 
@@ -36,10 +40,23 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
 
         this.buffer.write(input)
 
+        let vad = 0
+        let frames = 0
         let frame = this.buffer.getProcessingView(RNNOISE_SAMPLE_LENGTH)
         while (frame) {
-            this.engine.process(frame)
+            vad += this.engine.process(frame)
+            frames++
             frame = this.buffer.getProcessingView(RNNOISE_SAMPLE_LENGTH)
+        }
+
+        if (this.vadThreshold > 0 && frames > 0) {
+            const speaking = vad / frames >= this.vadThreshold
+            const now = currentTime * 1000
+            if (speaking !== this.speaking && now - this.lastVadTime > 100) {
+                this.speaking = speaking
+                this.lastVadTime = now
+                this.port.postMessage({ type: "vad", speaking })
+            }
         }
 
         this.buffer.readForOutput(output)

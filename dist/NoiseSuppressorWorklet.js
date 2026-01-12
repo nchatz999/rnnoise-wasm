@@ -10,6 +10,9 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
     engine;
     buffer;
     enabled = true;
+    vadThreshold = 0;
+    speaking = false;
+    lastVadTime = 0;
     constructor() {
         super();
         const wasm = createRNNWasmModuleSync();
@@ -18,6 +21,8 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
         this.port.onmessage = (e) => {
             if (e.data.type === "setEnabled")
                 this.enabled = e.data.enabled;
+            else if (e.data.type === "setVad")
+                this.vadThreshold = e.data.threshold;
         };
     }
     process(inputs, outputs) {
@@ -30,10 +35,22 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
             return true;
         }
         this.buffer.write(input);
+        let vad = 0;
+        let frames = 0;
         let frame = this.buffer.getProcessingView(RNNOISE_SAMPLE_LENGTH);
         while (frame) {
-            this.engine.process(frame);
+            vad += this.engine.process(frame);
+            frames++;
             frame = this.buffer.getProcessingView(RNNOISE_SAMPLE_LENGTH);
+        }
+        if (this.vadThreshold > 0 && frames > 0) {
+            const speaking = vad / frames >= this.vadThreshold;
+            const now = currentTime * 1000;
+            if (speaking !== this.speaking && now - this.lastVadTime > 100) {
+                this.speaking = speaking;
+                this.lastVadTime = now;
+                this.port.postMessage({ type: "vad", speaking });
+            }
         }
         this.buffer.readForOutput(output);
         return true;
