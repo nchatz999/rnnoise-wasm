@@ -28,6 +28,7 @@ export class NoiseSuppressorProcessor
     this.sourceNode = opts.audioContext.createMediaStreamSource(stream)
     this.node = new NoiseSuppressorNode(opts.audioContext)
     this.destinationNode = opts.audioContext.createMediaStreamDestination()
+    this.destinationNode.channelCount = 1
 
     this.sourceNode.connect(this.node).connect(this.destinationNode)
     this.processedTrack = this.destinationNode.stream.getAudioTracks()[0]

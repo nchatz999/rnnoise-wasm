@@ -8,9 +8,7 @@ export class NoiseSuppressorNode extends AudioWorkletNode {
     private _vadCallback?: VadCallback
 
     constructor(context: BaseAudioContext) {
-        super(context, NOISE_SUPPRESSOR_WORKLET_NAME, {
-            outputChannelCount: [1]
-        })
+        super(context, NOISE_SUPPRESSOR_WORKLET_NAME)
         this.port.onmessage = (e) => {
             if (e.data.type === "vad" && this._vadCallback) this._vadCallback(e.data.speaking)
         }
