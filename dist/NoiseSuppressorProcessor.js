@@ -55,6 +55,14 @@ export class NoiseSuppressorProcessor {
     get enabled() {
         return this.node?.enabled ?? true;
     }
+    /** Suppression power 0-1. 1 = full suppression, 0 = no suppression. */
+    set power(value) {
+        if (this.node)
+            this.node.power = value;
+    }
+    get power() {
+        return this.node?.power ?? 75;
+    }
     /** Set VAD callback. Threshold 0-1, default 0.5. */
     setVad(callback, threshold = 0.5) {
         this.node?.setVad(callback, threshold);

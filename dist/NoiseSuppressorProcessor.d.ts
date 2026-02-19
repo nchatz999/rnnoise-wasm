@@ -18,6 +18,9 @@ export declare class NoiseSuppressorProcessor implements TrackProcessor<Track.Ki
     /** Enable or disable noise suppression. */
     set enabled(value: boolean);
     get enabled(): boolean;
+    /** Suppression power 0-1. 1 = full suppression, 0 = no suppression. */
+    set power(value: number);
+    get power(): number;
     /** Set VAD callback. Threshold 0-1, default 0.5. */
     setVad(callback: VadCallback, threshold?: number): void;
 }

@@ -9,7 +9,9 @@ import createRNNWasmModuleSync from "./generated/rnnoise-sync";
 class NoiseSuppressorWorklet extends AudioWorkletProcessor {
     engine;
     buffer;
+    originalFrame;
     enabled = true;
+    power = 0.75;
     vadThreshold = 0;
     speaking = false;
     lastVadTime = 0;
@@ -18,11 +20,14 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
         const wasm = createRNNWasmModuleSync();
         this.engine = new RnnoiseEngine(wasm);
         this.buffer = new CircularBuffer(leastCommonMultiple(WORKLET_BLOCK_SIZE, RNNOISE_SAMPLE_LENGTH));
+        this.originalFrame = new Float32Array(RNNOISE_SAMPLE_LENGTH);
         this.port.onmessage = (e) => {
             if (e.data.type === "setEnabled")
                 this.enabled = e.data.enabled;
             else if (e.data.type === "setVad")
                 this.vadThreshold = e.data.threshold;
+            else if (e.data.type === "setPower")
+                this.power = e.data.power;
         };
     }
     process(inputs, outputs) {
@@ -37,9 +42,17 @@ class NoiseSuppressorWorklet extends AudioWorkletProcessor {
         this.buffer.write(input);
         let vad = 0;
         let frames = 0;
+        const blend = this.power < 1;
         let frame = this.buffer.getProcessingView(RNNOISE_SAMPLE_LENGTH);
         while (frame) {
+            if (blend)
+                this.originalFrame.set(frame);
             vad += this.engine.process(frame);
+            if (blend) {
+                for (let i = 0; i < RNNOISE_SAMPLE_LENGTH; i++) {
+                    frame[i] = (frame[i] ?? 0) * this.power + (this.originalFrame[i] ?? 0) * (1 - this.power);
+                }
+            }
             frames++;
             frame = this.buffer.getProcessingView(RNNOISE_SAMPLE_LENGTH);
         }
