@@ -13,6 +13,11 @@ export class NoiseSuppressorProcessor
   private destinationNode?: MediaStreamAudioDestinationNode
   private audioContext?: AudioContext
 
+  private _enabled = true
+  private _power = 75
+  private _vadCallback?: VadCallback
+  private _vadThreshold = 0.5
+
   constructor(private workletUrl: string) { }
 
   async init(opts: ProcessorOptions<Track.Kind>): Promise<void> {
@@ -22,6 +27,7 @@ export class NoiseSuppressorProcessor
     if (!opts.audioContext) {
       throw new Error("NoiseSuppressorProcessor requires audioContext")
     }
+    this.audioContext = opts.audioContext
     await opts.audioContext.audioWorklet.addModule(this.workletUrl)
 
     const stream = new MediaStream([opts.track])
@@ -35,13 +41,20 @@ export class NoiseSuppressorProcessor
   }
 
   async restart(opts: ProcessorOptions<Track.Kind>): Promise<void> {
-    if (opts.kind !== Track.Kind.Audio || !opts.audioContext) {
+    if (opts.kind !== Track.Kind.Audio) {
       throw new Error(
-        "NoiseSuppressorProcessor requires an audio track with audioContext",
+        "NoiseSuppressorProcessor requires an audio track",
       )
     }
     await this.destroy()
-    await this.init(opts)
+    await this.init({ ...opts, audioContext: opts.audioContext ?? this.audioContext })
+    if (this.node) {
+      this.node.enabled = this._enabled
+      this.node.power = this._power
+      if (this._vadCallback) {
+        this.node.setVad(this._vadCallback, this._vadThreshold)
+      }
+    }
   }
 
   /** Free audio resources. */
@@ -49,35 +62,37 @@ export class NoiseSuppressorProcessor
     this.sourceNode?.disconnect()
     this.node?.disconnect()
     this.destinationNode?.disconnect()
-    await this.audioContext?.close()
 
     this.sourceNode = undefined
     this.node = undefined
     this.destinationNode = undefined
-    this.audioContext = undefined
     this.processedTrack = undefined
   }
 
   /** Enable or disable noise suppression. */
   set enabled(value: boolean) {
+    this._enabled = value
     if (this.node) this.node.enabled = value
   }
 
   get enabled(): boolean {
-    return this.node?.enabled ?? true
+    return this._enabled
   }
 
-  /** Suppression power 0-1. 1 = full suppression, 0 = no suppression. */
+  /** Suppression power 0-100. 100 = full suppression, 0 = no suppression. */
   set power(value: number) {
+    this._power = value
     if (this.node) this.node.power = value
   }
 
   get power(): number {
-    return this.node?.power ?? 75
+    return this._power
   }
 
   /** Set VAD callback. Threshold 0-1, default 0.5. */
   setVad(callback: VadCallback, threshold = 0.5): void {
-    this.node?.setVad(callback, threshold)
+    this._vadCallback = callback
+    this._vadThreshold = threshold
+    if (this.node) this.node.setVad(callback, threshold)
   }
 }

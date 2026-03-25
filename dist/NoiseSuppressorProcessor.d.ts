@@ -10,6 +10,10 @@ export declare class NoiseSuppressorProcessor implements TrackProcessor<Track.Ki
     private sourceNode?;
     private destinationNode?;
     private audioContext?;
+    private _enabled;
+    private _power;
+    private _vadCallback?;
+    private _vadThreshold;
     constructor(workletUrl: string);
     init(opts: ProcessorOptions<Track.Kind>): Promise<void>;
     restart(opts: ProcessorOptions<Track.Kind>): Promise<void>;
@@ -18,7 +22,7 @@ export declare class NoiseSuppressorProcessor implements TrackProcessor<Track.Ki
     /** Enable or disable noise suppression. */
     set enabled(value: boolean);
     get enabled(): boolean;
-    /** Suppression power 0-1. 1 = full suppression, 0 = no suppression. */
+    /** Suppression power 0-100. 100 = full suppression, 0 = no suppression. */
     set power(value: number);
     get power(): number;
     /** Set VAD callback. Threshold 0-1, default 0.5. */

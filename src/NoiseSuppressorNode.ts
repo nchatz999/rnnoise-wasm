@@ -25,7 +25,7 @@ export class NoiseSuppressorNode extends AudioWorkletNode {
         this.port.postMessage({ type: "setEnabled", enabled: value })
     }
 
-    /** Suppression power 0-1. 1 = full suppression, 0 = no suppression. */
+    /** Suppression power 0-100. 100 = full suppression, 0 = no suppression. */
     get power(): number {
         return this._power
     }
