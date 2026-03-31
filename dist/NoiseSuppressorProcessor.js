@@ -32,6 +32,7 @@ export class NoiseSuppressorProcessor {
         this.destinationNode.channelCount = 1;
         this.sourceNode.connect(this.node).connect(this.destinationNode);
         this.processedTrack = this.destinationNode.stream.getAudioTracks()[0];
+        this.applyState();
     }
     async restart(opts) {
         if (opts.kind !== Track.Kind.Audio) {
@@ -39,12 +40,14 @@ export class NoiseSuppressorProcessor {
         }
         await this.destroy();
         await this.init({ ...opts, audioContext: opts.audioContext ?? this.audioContext });
-        if (this.node) {
-            this.node.enabled = this._enabled;
-            this.node.power = this._power;
-            if (this._vadCallback) {
-                this.node.setVad(this._vadCallback, this._vadThreshold);
-            }
+    }
+    applyState() {
+        if (!this.node)
+            return;
+        this.node.enabled = this._enabled;
+        this.node.power = this._power;
+        if (this._vadCallback) {
+            this.node.setVad(this._vadCallback, this._vadThreshold);
         }
     }
     /** Free audio resources. */

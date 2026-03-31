@@ -17,6 +17,7 @@ export declare class NoiseSuppressorProcessor implements TrackProcessor<Track.Ki
     constructor(workletUrl: string);
     init(opts: ProcessorOptions<Track.Kind>): Promise<void>;
     restart(opts: ProcessorOptions<Track.Kind>): Promise<void>;
+    private applyState;
     /** Free audio resources. */
     destroy(): Promise<void>;
     /** Enable or disable noise suppression. */
